@@ -1,7 +1,6 @@
-package test.java.defaultNg;//ok?
+package test.java.com.bigbank.customerstest;
 
 import io.restassured.RestAssured;
-import io.restassured.http.Method;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -21,8 +20,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class CustomerControllerTest {
-	private final int userIdFirst = 1;
-	private final int userIdFifth = 5;
 	private final String jsonParameterFirstName = "firstName";
 	private final String jsonParameterLastName = "lastName";
 	private final String jsonParameterEmail = "email";
@@ -35,16 +32,14 @@ public class CustomerControllerTest {
 	@Test
 	public void GetCustomers_ShouldReturn200() {
 		//given
+		int userIdFirst = 1;
+		int userIdFifth = 5;
 		int randomUserId = ThreadLocalRandom.current().nextInt(userIdFirst, userIdFifth + 1);
 		String randomUserIdAsString = String.valueOf(randomUserId);
 		//when
 		Response response = getCustomerById(randomUserIdAsString);
-		String responseBody = response.getBody().asString();
 		//then
 		int statusCode = response.getStatusCode();
-		System.out.println("The status code recieved: " + statusCode);
-		System.out.println("Response Body is: " + responseBody); //---not necessary?
-		System.out.println("User ID is: " + randomUserId);
 		Assert.assertEquals(statusCode, 200);
 	}
 
@@ -68,7 +63,7 @@ public class CustomerControllerTest {
 		Reader reader = new BufferedReader(new FileReader(csvFile));
 		CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader("first_name", "last_name", "email"));
 		List<CSVRecord> records = parser.getRecords();
-		for(int i = 1; i < records.size(); i++){
+		for (int i = 1; i < records.size(); i++) {
 			//given
 			CSVRecord record = records.get(i);
 			String expectedFirstName = record.get("first_name");
@@ -88,27 +83,22 @@ public class CustomerControllerTest {
 		}
 	}
 
-
-
 	@Test //sequence
 	public void RegistrationSuccessful_ShouldReturn200AndSetMarketingConsentToFalse() {
 		//given
 		String jsonValueFirstName = "Kate";
 		String jsonValueLastName = "Johnson";
 		String jsonValueEmail = "johnson@gmail.com";
+		//when
 		Response responsePost = postNewCustomer(jsonValueEmail, jsonValueFirstName, jsonValueLastName);
+		//then
 		int statusCode = responsePost.getStatusCode();
 		String newUserId = responsePost.body().asString();
-		System.out.println("The status code recieved: " + statusCode);
-		System.out.println("Response body: " + newUserId);
-		Assert.assertEquals(statusCode, 200);
 		Response responseGet = getCustomerById(newUserId);
 		JsonPath jsonPathEvaluator = responseGet.jsonPath();
-		//when
 		boolean marketingConsent = jsonPathEvaluator.get("marketingConsent");
-		//then
-		System.out.println("Marketing consent of a new user by default is " + marketingConsent);
-		Assert.assertEquals(marketingConsent, false);
+		Assert.assertEquals(statusCode, 200);
+		Assert.assertFalse(marketingConsent);
 	}
 
 	@Test
@@ -122,33 +112,28 @@ public class CustomerControllerTest {
 		//then
 		int statusCode = response.getStatusCode();
 		String newUserId = response.body().asString();
-		System.out.println("The status code recieved: " + statusCode);
-		System.out.println("Response body: " + newUserId);
 		Assert.assertEquals(statusCode, 400);
 	}
 
 	@Test
 	public void ChangeMarketingConsentSuccessful() {
 		//given
-		RequestSpecification request = RestAssured.given();
 		String jsonValueFirstName = "Melanie";
 		String jsonValueLastName = "Johnson";
 		String jsonValueEmail = "johnson@gmail.com";
 		Response responsePost = postNewCustomer(jsonValueEmail, jsonValueFirstName, jsonValueLastName);
 		String newUserId = responsePost.body().asString();
-		//Response responseGet = getCustomerById(newUserId);
-		//?
-		//JsonPath jsonPathEvaluator = responseGet.jsonPath();
-		//boolean marketingConsent = jsonPathEvaluator.get("marketingConsent");
-		//
-		boolean newMarketingConsent = true;
-		JSONObject requestPutBody = new JSONObject();
-		requestPutBody.put("marketingConsent", newMarketingConsent);
-		request.header("Content-Type", "application/json");
-		request.body(requestPutBody.toJSONString());
-		System.out.println("A new user with id = " + newUserId + " and a firstname " + jsonValueFirstName + " has a new value for Marketing Concent: " + newMarketingConsent);
-		System.out.println("A full response is: " + requestPutBody);
-		Assert.assertEquals(newMarketingConsent, true);
+
+		RequestSpecification requestPut = RestAssured.given();
+		requestPut.param("marketingConsent", true);
+		//when
+		Response responsePut = requestPut.put("/marketingConsent/" + newUserId);
+		//then
+		Assert.assertEquals(responsePut.getStatusCode(), 200);
+		Response responseGet = getCustomerById(newUserId);
+		JsonPath jsonPathEvaluator = responseGet.jsonPath();
+		boolean actualMarketingConsent = jsonPathEvaluator.get("marketingConsent");
+		Assert.assertTrue(actualMarketingConsent);
 	}
 
 	private Response postNewCustomer(String email, String firstName, String lastName){
