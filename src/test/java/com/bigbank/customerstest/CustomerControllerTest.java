@@ -102,6 +102,7 @@ public class CustomerControllerTest {
 	}
 
 	@Test
+	//failed testcase, see bug #1
 	public void RegistrationFailed_ShouldReturn400_WhenInvalidDataFormat() {
 		//given
 		String jsonValueFirstName = "Kate23/.";
@@ -116,6 +117,7 @@ public class CustomerControllerTest {
 	}
 
 	@Test
+	//failed testcase, see bug #2
 	public void ChangeMarketingConsentSuccessful() {
 		//given
 		String jsonValueFirstName = "Melanie";
