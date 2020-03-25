@@ -1,4 +1,4 @@
-package test.java.com.bigbank.customerstest;
+package test.java.com.controller.customerstest;
 
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
